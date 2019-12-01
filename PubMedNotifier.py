@@ -12,6 +12,24 @@ import textwrap
 class PubMedNotifier:
 
     def __init__(self):
+        self._init_vars()
+
+        if os.path.exists(self._config_file):
+            self._parse_config()
+        else:
+            raise FileNotFoundError(
+                    errno.ENOENT,
+                    os.strerror(errno.ENOENT),
+                    self._config_file
+                    )
+
+        if not os.path.exists(self._history_file):
+            open(self._history_file, "w").close()
+        self._get_history()
+
+        self._check_new_results()
+
+    def _init_vars(self):
         self._queries = dict()
         self._results = dict()
         self._counts = dict()
@@ -20,26 +38,13 @@ class PubMedNotifier:
 
         self._user_dir = os.path.expanduser("~/")
         self._cache_dir = self._user_dir+".cache/pubmednotifier"
-
-        self._config_file = self._user_dir+".config/pubmednotifier/config"
-        if os.path.exists(self._config_file):
-            self._read_config()
-            self._parse_default_config()
-            self._parse_queries()
-        else:
-            raise FileNotFoundError(
-                    errno.ENOENT,
-                    os.strerror(errno.ENOENT),
-                    self._config_file
-                    )
-
         self._history_file = self._user_dir+".local/share/pubmednotifier/history"
-        if not os.path.exists(self._history_file):
-            open(self._history_file, "w").close()
-        self._get_history()
+        self._config_file = self._user_dir+".config/pubmednotifier/config"
 
-        self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
-        self._check_new_results()
+    def _parse_config(self):
+        self._read_config()
+        self._parse_default_config()
+        self._parse_queries()
 
     def _read_config(self):
         self._config = configparser.ConfigParser()
@@ -100,6 +105,7 @@ class PubMedNotifier:
             self._history = [i.strip("\n") for i in f.readlines()]
 
     def _check_new_results(self):
+        self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
         self._fetch_results()
         self._check_history()
         self._parse_results()
