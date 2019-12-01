@@ -148,7 +148,8 @@ class PubMedNotifier:
 
     def _set_history(self):
         for title, ids in self._results.items():
-            self._history += ids
+            if ids:
+                self._history += ids
         self._history = list(set(self._history))
         with open(self._history_file,"w") as f :
             for pmid in self._history:
