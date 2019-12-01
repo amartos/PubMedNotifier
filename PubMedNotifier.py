@@ -136,16 +136,17 @@ class PubMedNotifier:
 
     def _retrieve_pmid_infos(self):
         for title, ids in self._results.items():
-            self._new_papers[title] = dict()
-            for pmid in ids:
-                article = self._fetcher.article_by_pmid(pmid)
-                self._new_papers[title][pmid] = (
-                        article.title,
-                        article.journal,
-                        article.year,
-                        ", ".join(article.authors),
-                        article.abstract
-                        )
+            if ids:
+                self._new_papers[title] = dict()
+                for pmid in ids:
+                    article = self._fetcher.article_by_pmid(pmid)
+                    self._new_papers[title][pmid] = (
+                            article.title,
+                            article.journal,
+                            article.year,
+                            ", ".join(article.authors),
+                            article.abstract
+                            )
 
     def _set_history(self):
         for title, ids in self._results.items():
