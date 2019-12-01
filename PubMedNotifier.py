@@ -145,13 +145,10 @@ class PubMedNotifier:
                             )
 
     def _save_pmids_in_history(self):
-        for title, ids in self._results.items():
-            if ids:
-                self._history += ids
-        self._history = list(set(self._history))
-        with open(self._history_file,"w") as f :
-            for pmid in self._history:
-                f.write(pmid+"\n")
+        with open(self._history_file,"a") as f :
+            for title, ids in self._results.items():
+                if ids:
+                    f.write("\n"+"\n".join(ids))
 
     def _write_results(self):
         text = str()
