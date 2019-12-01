@@ -1,0 +1,36 @@
+##########################################
+# CONFIGURATION FILE 
+##########################################
+
+[DEFAULT]
+# Write here your e-mail, in case there is an issue
+# the NCBI server will be able to contact you before
+# eventually blocking your IP.
+e-mail = my.email@example.com
+
+# Write here the folder path in which the results files
+# will be written. ~ will be read as /home/user
+results path = ~/.local/share/pubmednotifier
+
+# If you need different defaults for the search parameters
+# you can change them here :
+# => first record to retrieve
+retstart = 0
+# => max number of records to retrieve
+retmax = 20
+# => oldest date to retrieve
+# (default maxdate is defined as the date of the script execution)
+mindate = 1900/01/01
+
+##########################################
+# SAMPLE CONFIGURATION
+##########################################
+# The only mandatory fields for a search 
+# are the title and the query (search terms).
+
+# [Title]
+# query = my query
+# retstart = 0
+# retmax = 20
+# mindate = YYYY/MM/DD
+# maxdate = YYYY/MM/DD
