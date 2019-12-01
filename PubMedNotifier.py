@@ -23,10 +23,10 @@ class PubMedNotifier:
                     self._config_file
                     )
 
-        if not os.path.exists(self._history_file):
-            open(self._history_file, "w").close()
-        else:
+        if os.path.exists(self._history_file):
             self._get_history()
+        else:
+            open(self._history_file, "w").close()
 
         self._check_new_results()
 
