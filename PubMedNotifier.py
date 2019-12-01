@@ -8,6 +8,7 @@ import configparser
 import metapub
 import notify2
 import textwrap
+from xdg import (XDG_CACHE_HOME, XDG_DATA_HOME, XDG_CONFIG_HOME)
 
 class PubMedNotifier:
 
@@ -37,10 +38,9 @@ class PubMedNotifier:
         self._new_papers = dict()
         self._history = list()
 
-        self._user_dir = os.path.expanduser("~/")
-        self._cache_dir = self._user_dir+".cache/pubmednotifier"
-        self._history_file = self._user_dir+".local/share/pubmednotifier/history"
-        self._config_file = self._user_dir+".config/pubmednotifier/config"
+        self._cache_dir = str(XDG_CACHE_HOME.absolute())+"/pubmednotifier"
+        self._history_file = str(XDG_DATA_HOME.absolute())+"/pubmednotifier/history"
+        self._config_file = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier/config"
 
     def _parse_config(self):
         self._read_config()
