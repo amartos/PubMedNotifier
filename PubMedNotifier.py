@@ -166,11 +166,12 @@ class PubMedNotifier:
                         abstract = "No abstract."
                     else:
                         abstract = "\n".join(textwrap.wrap(abstract, width=80))
-                    text += "## {}\n\n{}, *{}*, {}\n\n[Link to pubmed]({})\n\n{}\n\n".format(
+                    text += "## {}\n\n{}, *{}*, {}\n\n[PMID: {}]({})\n\n{}\n\n".format(
                             title,
                             authors,
                             journal,
                             year,
+                            pmid,
                             "https://www.ncbi.nlm.nih.gov/pubmed/"+pmid,
                             abstract,
                             )
