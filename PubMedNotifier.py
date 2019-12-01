@@ -34,8 +34,9 @@ class PubMedNotifier:
                     )
 
         self._history_file = self._user_dir+".local/share/pubmednotifier/history"
-        if self._history_file_exists():
-            self._get_history()
+        if not os.path.exists(self._history_file):
+            open(self._history_file, "w").close()
+        self._get_history()
 
         self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
         self._check_new_results()
@@ -93,13 +94,6 @@ class PubMedNotifier:
                         "mindate":mindate,
                         "maxdate":maxdate,
                         }
-
-    def _history_file_exists(self):
-        if not os.path.exists(self._history_file):
-            open(self._history_file, "w").close()
-            return False
-        else:
-            return True
 
     def _get_history(self):
         with open(self._history_file,"r") as f :
