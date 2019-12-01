@@ -1,11 +1,13 @@
 .PHONY: install upgrade reset
 
+define check_config_dir
+	if [ -z $${XDG_CONFIG_HOME+x} ]; then $(1) ; else $(2) ; fi
+endef
+
 install:
 	@pip3 install --user -r requirements.txt
-	@mkdir -p ~/.cache/pubmednotifier
-	@mkdir -p ~/.config/pubmednotifier
-	@mkdir -p ~/.local/share/pubmednotifier
-	@cp -n config_example ~/.config/pubmednotifier/config
+	@$(call check_config_dir, mkdir -p ~/.config/pubmednotifier, mkdir -p '$$XDG_CONFIG_HOME'/pubmednotifier)
+	@$(call check_config_dir, cp -n config_example ~/.config/pubmednotifier/config, cp -n config_example '$$XDG_CONFIG_HOME'/pubmednotifier/config)
 
 upgrade: install
 	@git pull

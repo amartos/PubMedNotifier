@@ -39,8 +39,18 @@ class PubMedNotifier:
         self._history = list()
 
         self._cache_dir = str(XDG_CACHE_HOME.absolute())+"/pubmednotifier"
-        self._history_file = str(XDG_DATA_HOME.absolute())+"/pubmednotifier/history"
-        self._config_file = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier/config"
+        if not os.path.exists(self._cache_dir):
+            os.mkdir(self._cache_dir)
+
+        self._data_dir = str(XDG_DATA_HOME.absolute())+"/PubMedNotifier"
+        self._history_file = self._data_dir+"/history"
+        if not os.path.exists(self._data_dir):
+            os.mkdir(self._data_dir)
+
+        self._config_dir = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier"
+        self._config_file = self._config_dir+"/config"
+        if not os.path.exists(self._config_dir):
+            os.mkdir(self._config_dir)
 
     def _parse_config(self):
         self._read_config()
