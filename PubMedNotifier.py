@@ -41,7 +41,7 @@ class PubMedNotifier:
         if not os.path.exists(self._cache_dir):
             os.mkdir(self._cache_dir)
 
-        self._data_dir = str(XDG_DATA_HOME.absolute())+"/PubMedNotifier"
+        self._data_dir = str(XDG_DATA_HOME.absolute())+"/pubmednotifier"
         self._history_file = self._data_dir+"/history"
         if not os.path.exists(self._data_dir):
             os.mkdir(self._data_dir)
@@ -62,9 +62,10 @@ class PubMedNotifier:
 
     def _parse_default_config(self):
         self._email = self._config["DEFAULT"]["e-mail"]
-        self._new_papers_file = \
-            os.path.expanduser(self._config["DEFAULT"]["results path"]) + \
+        self._new_papers_file = os.path.join(
+            os.path.expanduser(self._config["DEFAULT"]["results path"]),
             str(datetime.datetime.now())+".md"
+            )
         self._default_retstart = self._config["DEFAULT"]["retstart"]
         self._default_retmax = self._config["DEFAULT"]["retmax"]
         self._default_mindate = self._config["DEFAULT"]["mindate"]
