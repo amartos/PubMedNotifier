@@ -126,13 +126,9 @@ class PubMedNotifier:
             self._results[title] = ids
 
     def _check_history(self):
-        new_ids = list()
         for title, ids in self._results.items():
-            for pmid in ids:
-                if not pmid in self._history:
-                    new_ids.append(pmid)
-            self._results[title] = new_ids
-            self._counts[title] = len(new_ids)
+            self._results[title] = [i for i in ids if not i in self._history]
+            self._counts[title] = len(self._results[title])
 
     def _retrieve_pmid_infos(self):
         for title, ids in self._results.items():
