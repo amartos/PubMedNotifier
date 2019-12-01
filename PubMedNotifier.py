@@ -22,10 +22,16 @@ class PubMedNotifier:
         self._cache_dir = self._user_dir+".cache/pubmednotifier"
 
         self._config_file = self._user_dir+".config/pubmednotifier/config"
-        self._config_file_exists()
-        self._read_config()
-        self._parse_default_config()
-        self._parse_queries()
+        if os.path.exists(self._config_file):
+            self._read_config()
+            self._parse_default_config()
+            self._parse_queries()
+        else:
+            raise FileNotFoundError(
+                    errno.ENOENT,
+                    os.strerror(errno.ENOENT),
+                    self._config_file
+                    )
 
         self._history_file = self._user_dir+".local/share/pubmednotifier/history"
         if self._history_file_exists():
@@ -33,14 +39,6 @@ class PubMedNotifier:
 
         self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
         self._check_new_results()
-
-    def _config_file_exists(self):
-        if not os.path.exists(self._config_file):
-            raise FileNotFoundError(
-                    errno.ENOENT,
-                    os.strerror(errno.ENOENT),
-                    self._config_file
-                    )
 
     def _read_config(self):
         self._config = configparser.ConfigParser()
