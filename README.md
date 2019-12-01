@@ -77,4 +77,4 @@ plenty of queries), please avoid launching it everyday.
 
 ## TODO
 
-[] add other types of notification (mails, etc...)
+- [ ] add other types of notification (mails, etc...)
