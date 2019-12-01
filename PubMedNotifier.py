@@ -110,7 +110,7 @@ class PubMedNotifier:
         self._fetch_results()
         self._check_history()
         self._retrieve_pmid_infos()
-        self._set_history()
+        self._save_pmids_in_history()
         self._write_results()
         self._notify()
 
@@ -148,7 +148,7 @@ class PubMedNotifier:
                             article.abstract
                             )
 
-    def _set_history(self):
+    def _save_pmids_in_history(self):
         for title, ids in self._results.items():
             if ids:
                 self._history += ids
