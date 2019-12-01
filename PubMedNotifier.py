@@ -155,11 +155,9 @@ class PubMedNotifier:
                 f.write(pmid+"\n")
 
     def _write_results(self):
-        empty = True
         text = str()
         for query, ids in self._new_papers.items():
             if ids:
-                empty = False
                 text += "# "+query+"\n\n"
                 for pmid, infos in ids.items():
                     title, journal, year, authors, abstract = infos
@@ -175,17 +173,16 @@ class PubMedNotifier:
                             "https://www.ncbi.nlm.nih.gov/pubmed/"+pmid,
                             abstract,
                             )
-        if not empty:
+        if text:
             with open(self._new_papers_file, "w") as f:
                 f.write(text)
 
     def _notify(self):
-        total = 0
         message = str()
         for title, count in self._counts.items():
-            total += count
-            message += title+": {} new papers\n".format(str(count))
-        if total > 0:
+            if count:
+                message += title+": {} new papers\n".format(str(count))
+        if message:
             notify2.init("PubMedNotifier")
             notifier = notify2.Notification(message)
             notifier.show()
