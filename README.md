@@ -19,16 +19,19 @@ This script is developed for GNU/Linux distributions. PR for adaptations are wel
 ## Install, upgrade, and reset history
 
 ```sh
+# Installation
 git clone https://gitea.com/amartos/PubMedNotifier/
 cd PubMedNotifier && make install
 ```
 
 ```sh
+# Upgrade
 cd path/to/PubMedNotifier
 make upgrade
 ```
 
 ```sh
+# Reset history
 cd path/to/PubMedNotifier
 make reset
 ```
@@ -43,7 +46,7 @@ where the results files will be written, and other minor searches defaults.
 To set-up searches, you need at least a title for the search, and the query. Add
 them to the file as follow :
 
-```
+```ini
 [Title]
 query = my words to search
 ```
