@@ -18,6 +18,9 @@ This script is developed for GNU/Linux distributions. PR for adaptations are wel
 
 ## Install, upgrade, and reset history
 
+You will need Python 3 and the corresponding pip package. Other packages are
+listed in the `requirements.txt` file.
+
 ```sh
 # Installation
 git clone https://gitea.com/amartos/PubMedNotifier/
