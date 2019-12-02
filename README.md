@@ -83,6 +83,10 @@ retstart = 5
 retmax = 200
 ```
 
+## Issues
+
+If you have any issues, please report to the [main repo ](https://gitea.com/amartos/PubMedNotifier/issues).
+
 ## TODO
 
 - [ ] add notification by mails
