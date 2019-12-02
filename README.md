@@ -2,7 +2,7 @@
 
 ## Description
 
-This python script is a python port of the [pubcrawler](http://pubcrawler.gen.tcd.ie/)
+This python script was inspired by the [pubcrawler](http://pubcrawler.gen.tcd.ie/)
 perl script. Its purpose is to alert for new PubMed publications for a given query,
 without having to go through the PubMed website. This script is powerful when
 used as a scheduled task, for eg. as a cron job.
@@ -69,11 +69,6 @@ maxdate = 2018/12/31
 retstart = 5
 retmax = 200
 ```
-
-## Notes on usage
-
-In order to avoid an overload of the PubMed servers (especially if you have 
-plenty of queries), please avoid launching it everyday.
 
 ## TODO
 
