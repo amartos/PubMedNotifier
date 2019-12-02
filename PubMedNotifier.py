@@ -8,11 +8,13 @@ import metapub
 import notify2
 import textwrap
 from xdg import (XDG_CACHE_HOME, XDG_DATA_HOME, XDG_CONFIG_HOME)
+import argparse
 
 class PubMedNotifier:
 
     def __init__(self):
         self._init_vars()
+        self._parse_args()
 
         if os.path.exists(self._config_file):
             self._parse_config()
@@ -50,6 +52,24 @@ class PubMedNotifier:
         self._config_file = self._config_dir+"/config"
         if not os.path.exists(self._config_dir):
             os.mkdir(self._config_dir)
+
+    def _parse_args(self):
+        parser = argparse.ArgumentParser(self,
+                description="""PubMedNotifier is a script that fetch queries
+                results from the Pubmed API and notify if new papers are
+                available."""
+            )
+
+        parser.add_argument(
+                "-c", "--config",
+                help="""Specify a path for the config file. Default is in
+                $XDG_CONFIG_HOME/pubmednotifier/config"""
+            )
+
+        args = parser.parse_args()
+
+        if args.config:
+            self._config_file = args.config
 
     def _parse_config(self):
         self._read_config()

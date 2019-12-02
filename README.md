@@ -83,4 +83,4 @@ retmax = 200
 ## TODO
 
 - [ ] add notification by mails
-- [ ] add option to specify path of config file
+- [x] add option to specify path of config file
