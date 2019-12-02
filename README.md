@@ -7,6 +7,13 @@ perl script. Its purpose is to alert for new PubMed publications for a given que
 without having to go through the PubMed website. This script is powerful when
 used as a scheduled task, for eg. as a cron job.
 
+It uses the [metapub](https://pypi.org/project/metapub/) python package to fetch
+queries results, and store all already encoutered PMIDs in a simple history file
+in your `$XDG_DATA_HOME` folder. All new results are stored in a markdown file
+in a specified folder, and described by their title, author, journal, PMID and
+abstract. For now only simple desktop notifications are available, but mails
+notifications will be available in the future.
+
 This script is developed for GNU/Linux distributions. PR for adaptations are welcomed.
 
 ## Install, upgrade, and reset history
