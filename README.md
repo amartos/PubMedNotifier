@@ -68,7 +68,7 @@ You can also narrow searches by adding the following parameters:
 
 Here is a complete example for a couple of searches:
 
-```
+```ini
 [Alexandre Martos]
 query = Alexandre Martos[Author]
 
