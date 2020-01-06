@@ -27,6 +27,8 @@ class PubMedNotifier:
         self._init_vars()
         self._parse_args()
 
+        # This check is done here as the _config_file var
+        # can be changed by the script's arguments
         if os.path.exists(self._config_file):
             self._parse_config()
         else:
