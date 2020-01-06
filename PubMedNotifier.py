@@ -35,7 +35,7 @@ class PubMedNotifier:
             self._error_log("'{}' config file does not exists.".format(self._config_file))
             sys.exit(1)
 
-        self._get_history()
+        self._get_pmids_history()
 
         if self._queries:
             self._check_new_results()
@@ -170,16 +170,17 @@ class PubMedNotifier:
                         "maxdate":maxdate,
                         }
 
-    def _get_history(self):
+    def _get_pmids_history(self):
         with open(self._history_file,"r") as f :
             self._history = [i.strip("\n") for i in f.readlines()]
 
     def _check_new_results(self):
         self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
         self._fetch_results()
-        self._check_history()
-        self._retrieve_pmid_infos()
-        self._save_pmids_in_history()
+        self._check_pmids_history()
+        self._count_new_items()
+        self._retrieve_new_pmid_infos()
+        self._save_new_pmids_in_history()
         self._write_results()
         self._notify()
 
@@ -194,12 +195,15 @@ class PubMedNotifier:
                     )
             self._results[title] = ids
 
-    def _check_history(self):
+    def _check_pmids_history(self):
         for title, ids in self._results.items():
             self._results[title] = [i for i in ids if not i in self._history]
+
+    def _count_new_items(self):
+        for title in self._results.keys():
             self._counts[title] = len(self._results[title])
 
-    def _retrieve_pmid_infos(self):
+    def _retrieve_new_pmid_infos(self):
         for title, ids in self._results.items():
             if ids:
                 self._new_papers[title] = dict()
@@ -213,7 +217,7 @@ class PubMedNotifier:
                             article.abstract
                             )
 
-    def _save_pmids_in_history(self):
+    def _save_new_pmids_in_history(self):
         with open(self._history_file,"a") as f :
             for title, ids in self._results.items():
                 if ids:
