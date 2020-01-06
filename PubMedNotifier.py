@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-import datetime
-import os, sys
-import configparser
-import metapub
+import os, sys, argparse
+import re, datetime, textwrap
 import notify2
-import textwrap
+
+import metapub
+import configparser
 from xdg import (XDG_CACHE_HOME, XDG_DATA_HOME, XDG_CONFIG_HOME)
-import argparse
-import re
 
 class EmailSyntaxError(ValueError):
     """Error to raise if the provided e-mail is
