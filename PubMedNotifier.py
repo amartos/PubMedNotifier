@@ -175,7 +175,6 @@ class PubMedNotifier:
             self._history = [i.strip("\n") for i in f.readlines()]
 
     def _check_new_results(self):
-        self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
         self._fetch_results()
         self._check_pmids_history()
         self._count_new_items()
@@ -185,6 +184,7 @@ class PubMedNotifier:
         self._notify()
 
     def _fetch_results(self):
+        self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
         for title, values in self._queries.items():
             ids = self._fetcher.pmids_for_query(
                     query=values["query"],
