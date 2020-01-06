@@ -50,23 +50,26 @@ class PubMedNotifier:
         self._history = list()
 
         self._cache_dir = str(XDG_CACHE_HOME.absolute())+"/pubmednotifier"
-        if not os.path.exists(self._cache_dir):
-            os.mkdir(self._cache_dir)
+        self._check_if_folder_exists(self._cache_dir)
 
         self._data_dir = str(XDG_DATA_HOME.absolute())+"/pubmednotifier"
+        self._check_if_folder_exists(self._data_dir)
         self._log_file = self._data_dir+"/log_"+str(datetime.datetime.now())
+        self._check_if_file_exists(self._log_file)
         self._history_file = self._data_dir+"/history"
-        if not os.path.exists(self._data_dir):
-            os.mkdir(self._data_dir)
-        if not os.path.exists(self._log_file):
-            open(self._log_file, "w").close()
-        if not os.path.exists(self._history_file):
-            open(self._history_file, "w").close()
+        self._check_if_file_exists(self._history_file)
 
         self._config_dir = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier"
+        self._check_if_folder_exists(self._config_dir)
         self._config_file = self._config_dir+"/config"
-        if not os.path.exists(self._config_dir):
-            os.mkdir(self._config_dir)
+
+    def _check_if_folder_exists(self, path):
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+    def _check_if_file_exists(self, path):
+        if not os.path.exists(path):
+            open(path, "w").close()
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(self,
