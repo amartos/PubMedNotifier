@@ -35,13 +35,7 @@ class PubMedNotifier:
             self._error_log("'{}' config file does not exists.".format(self._config_file))
             sys.exit(1)
 
-        if os.path.exists(self._history_file):
-            self._get_history()
-        else:
-            open(self._history_file, "w").close()
-
-        if not os.path.exists(self._log_file):
-            open(self._log_file, "w").close()
+        self._get_history()
 
         if self._queries:
             self._check_new_results()
@@ -64,6 +58,10 @@ class PubMedNotifier:
         self._history_file = self._data_dir+"/history"
         if not os.path.exists(self._data_dir):
             os.mkdir(self._data_dir)
+        if not os.path.exists(self._log_file):
+            open(self._log_file, "w").close()
+        if not os.path.exists(self._history_file):
+            open(self._history_file, "w").close()
 
         self._config_dir = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier"
         self._config_file = self._config_dir+"/config"
