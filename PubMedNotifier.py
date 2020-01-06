@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 
 import datetime
-import errno
-import os
+import os, sys
 import configparser
 import metapub
 import notify2
 import textwrap
 from xdg import (XDG_CACHE_HOME, XDG_DATA_HOME, XDG_CONFIG_HOME)
 import argparse
+import re
+
+class EmailSyntaxError(ValueError):
+    """Error to raise if the provided e-mail is
+    not syntactically valid."""
+    pass
+
+class EmptyDefaultError(ValueError):
+    """Error to raise if a DEFAULT is empty."""
+    pass
+
+class QueryInvalidError(ValueError):
+    """Error to raise if a query is badly formatted."""
+    pass
 
 class PubMedNotifier:
 
@@ -19,18 +32,21 @@ class PubMedNotifier:
         if os.path.exists(self._config_file):
             self._parse_config()
         else:
-            raise FileNotFoundError(
-                    errno.ENOENT,
-                    os.strerror(errno.ENOENT),
-                    self._config_file
-                    )
+            self._error_log("'{}' config file does not exists.".format(self._config_file))
+            sys.exit(1)
 
         if os.path.exists(self._history_file):
             self._get_history()
         else:
             open(self._history_file, "w").close()
 
-        self._check_new_results()
+        if not os.path.exists(self._log_file):
+            open(self._log_file, "w").close()
+
+        if self._queries:
+            self._check_new_results()
+        else:
+            self._error_log("No defined queries in {}".format(self._config_file))
 
     def _init_vars(self):
         self._queries = dict()
@@ -44,6 +60,7 @@ class PubMedNotifier:
             os.mkdir(self._cache_dir)
 
         self._data_dir = str(XDG_DATA_HOME.absolute())+"/pubmednotifier"
+        self._log_file = self._data_dir+"/log_"+str(datetime.datetime.now())
         self._history_file = self._data_dir+"/history"
         if not os.path.exists(self._data_dir):
             os.mkdir(self._data_dir)
@@ -81,15 +98,38 @@ class PubMedNotifier:
         self._config.read_file(open(self._config_file))
 
     def _parse_default_config(self):
-        self._email = self._config["DEFAULT"]["e-mail"]
+        self._email = self._get_default_parameters("e-mail")
+        path = self._get_default_parameters("results path")
         self._new_papers_file = os.path.join(
-            os.path.expanduser(self._config["DEFAULT"]["results path"]),
+            os.path.expanduser(path),
             str(datetime.datetime.now())+".md"
             )
-        self._default_retstart = self._config["DEFAULT"]["retstart"]
-        self._default_retmax = self._config["DEFAULT"]["retmax"]
-        self._default_mindate = self._config["DEFAULT"]["mindate"]
+        self._default_retstart = self._get_default_parameters("retstart")
+        self._default_retmax = self._get_default_parameters("retmax")
+        self._default_mindate = self._get_default_parameters("mindate")
         self._default_maxdate = None
+
+    def _get_default_parameters(self, parameter):
+        """Get the DEFAULT parameter if valid,
+        but raise error and abort if invalid"""
+        try:
+            value = self._config["DEFAULT"][parameter]
+            # check if parameter is empty
+            if not value:
+                raise EmptyDefaultError
+            else:
+                # check if e-mail syntax is valid
+                if parameter == "e-mail" and \
+                        not bool(re.fullmatch(r"[^@]+@[^@]+\.[^@]+", value)):
+                    raise EmailSyntaxError
+                else:
+                    return value
+        except KeyError or EmptyDefaultError as err:
+            self._error_log("DEFAULT {} is not defined.".format(parameter))
+        except EmailSyntaxError as err:
+            self._error_log("{} is not a syntactically valid e-mail.".format(value))
+
+        sys.exit(1)
 
     def _parse_queries(self):
         for item in self._config.sections():
@@ -99,8 +139,9 @@ class PubMedNotifier:
                 try:
                     term = self._config.get(item, "query")
                     if not term:
-                        continue
-                except configparser.NoOptionError:
+                        raise QueryInvalidError
+                except configparser.NoOptionError or KeyError or QueryInvalidError as err:
+                    self._error_log("Query {} is not valid.\n".format(title))
                     continue
 
                 try:
@@ -215,6 +256,16 @@ class PubMedNotifier:
             notifier.show()
             return
 
+    def _error_log(self, err_msg):
+        with open(self._log_file, "a") as f:
+            f.write(str(datetime.datetime.now())+": "+err_msg+"\n")
+        print(err_msg)
+        self._check_log_size()
+
+    def _check_log_size(self):
+        if os.stat(self._log_file).st_size >= 500:
+            self._log_file = self._data_dir+"/log_"+str(datetime.datetime.now())
+            open(self._log_file, "w").close()
 
 if __name__ == "__main__":
     PubMedNotifier()
