@@ -197,7 +197,9 @@ class PubMedNotifier:
 
     def _check_pmids_history(self):
         for title, ids in self._results.items():
-            self._results[title] = [i for i in ids if not i in self._history]
+            new_items = [i for i in ids if not i in self._history]
+            if new_items:
+                self._results[title] = new_items
 
     def _count_new_items(self):
         for title in self._results.keys():
@@ -205,44 +207,41 @@ class PubMedNotifier:
 
     def _retrieve_new_pmid_infos(self):
         for title, ids in self._results.items():
-            if ids:
-                self._new_papers[title] = dict()
-                for pmid in ids:
-                    article = self._fetcher.article_by_pmid(pmid)
-                    self._new_papers[title][pmid] = (
-                            article.title,
-                            article.journal,
-                            article.year,
-                            ", ".join(article.authors),
-                            article.abstract
-                            )
+            self._new_papers[title] = dict()
+            for pmid in ids:
+                article = self._fetcher.article_by_pmid(pmid)
+                self._new_papers[title][pmid] = (
+                        article.title,
+                        article.journal,
+                        article.year,
+                        ", ".join(article.authors),
+                        article.abstract
+                        )
 
     def _save_new_pmids_in_history(self):
         with open(self._history_file,"a") as f :
             for title, ids in self._results.items():
-                if ids:
-                    f.write("\n"+"\n".join(ids))
+                f.write("\n"+"\n".join(ids))
 
     def _write_results(self):
         text = str()
         for query, ids in self._new_papers.items():
-            if ids:
-                text += "# "+query+"\n\n"
-                for pmid, infos in ids.items():
-                    title, journal, year, authors, abstract = infos
-                    if not abstract or abstract == "None":
-                        abstract = "No abstract."
-                    else:
-                        abstract = "\n".join(textwrap.wrap(abstract, width=80))
-                    text += "## {}\n\n{}, *{}*, {}\n\n[PMID: {}]({})\n\n{}\n\n".format(
-                            title,
-                            authors,
-                            journal,
-                            year,
-                            pmid,
-                            "https://www.ncbi.nlm.nih.gov/pubmed/"+pmid,
-                            abstract,
-                            )
+            text += "# "+query+"\n\n"
+            for pmid, infos in ids.items():
+                title, journal, year, authors, abstract = infos
+                if not abstract or abstract == "None":
+                    abstract = "No abstract."
+                else:
+                    abstract = "\n".join(textwrap.wrap(abstract, width=80))
+                text += "## {}\n\n{}, *{}*, {}\n\n[PMID: {}]({})\n\n{}\n\n".format(
+                        title,
+                        authors,
+                        journal,
+                        year,
+                        pmid,
+                        "https://www.ncbi.nlm.nih.gov/pubmed/"+pmid,
+                        abstract,
+                        )
         if text:
             with open(self._new_papers_file, "w") as f:
                 f.write(text)
@@ -250,8 +249,7 @@ class PubMedNotifier:
     def _notify(self):
         message = str()
         for title, count in self._counts.items():
-            if count:
-                message += title+": {} new papers\n".format(str(count))
+            message += title+": {} new papers\n".format(str(count))
         if message:
             notify2.init("PubMedNotifier")
             notifier = notify2.Notification(message)
