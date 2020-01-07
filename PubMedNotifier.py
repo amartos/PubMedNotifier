@@ -2,7 +2,6 @@
 
 import os, sys, argparse
 import re, datetime, textwrap
-import notify2
 
 import metapub
 import configparser
@@ -39,6 +38,8 @@ class PubMedNotifier:
 
         if self._queries:
             self._check_new_results()
+            if self._send_notification:
+                self._notify()
         else:
             self._error_log("No defined queries in {}".format(self._config_file))
 
@@ -48,6 +49,7 @@ class PubMedNotifier:
         self._counts = dict()
         self._new_papers = dict()
         self._history = list()
+        self._send_notification = bool()
 
         self._cache_dir = str(XDG_CACHE_HOME.absolute())+"/pubmednotifier"
         self._check_if_folder_exists(self._cache_dir)
@@ -84,10 +86,18 @@ class PubMedNotifier:
                 $XDG_CONFIG_HOME/pubmednotifier/config"""
             )
 
+        parser.add_argument(
+                "-q", "--quiet",
+                help="""Disables notifications.""",
+                action="store_true"
+            )
+
         args = parser.parse_args()
 
         if args.config:
             self._config_file = args.config
+
+        self._send_notification = not args.quiet
 
     def _parse_config(self):
         self._read_config()
@@ -184,7 +194,6 @@ class PubMedNotifier:
         self._retrieve_new_pmid_infos()
         self._save_new_pmids_in_history()
         self._write_results()
-        self._notify()
 
     def _fetch_results(self):
         self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
@@ -250,6 +259,12 @@ class PubMedNotifier:
                 f.write(text)
 
     def _notify(self):
+        if os.path.exists(self._new_papers_file):
+            self._desktop_notification()
+
+    def _desktop_notification(self):
+        import notify2
+
         message = str()
         for title, count in self._counts.items():
             message += title+": {} new papers\n".format(str(count))
