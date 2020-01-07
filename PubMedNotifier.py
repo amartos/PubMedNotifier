@@ -26,12 +26,18 @@ class PubMedNotifier:
         self._init_vars()
         self._parse_args()
 
-        # This check is done here as the _config_file var
+        # These checks are done here as the _config_file var
         # can be changed by the script's arguments
         if os.path.exists(self._config_file):
             self._parse_config()
         else:
             self._error_log("'{}' config file does not exists.".format(self._config_file))
+            sys.exit(1)
+
+        if os.path.exists(self._queries_file):
+            self._parse_queries()
+        else:
+            self._error_log("'{}' queries file does not exists.".format(self._queries_file))
             sys.exit(1)
 
         self._get_pmids_history()
@@ -44,6 +50,9 @@ class PubMedNotifier:
             self._error_log("No defined queries in {}".format(self._config_file))
 
     def _init_vars(self):
+        self._config = None
+        self._queries_config = None
+        self._defaults = dict()
         self._queries = dict()
         self._results = dict()
         self._counts = dict()
@@ -60,6 +69,8 @@ class PubMedNotifier:
         self._check_if_file_exists(self._log_file)
         self._history_file = self._data_dir+"/history"
         self._check_if_file_exists(self._history_file)
+        self._queries_file = self._data_dir+"/queries"
+        self._check_if_file_exists(self._queries_file)
 
         self._config_dir = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier"
         self._check_if_folder_exists(self._config_dir)
@@ -87,6 +98,12 @@ class PubMedNotifier:
             )
 
         parser.add_argument(
+                "-f", "--file",
+                help="""Specify a path for the queries file. Default is in
+                $XDG_DATA_HOME/pubmednotifier/queries"""
+            )
+
+        parser.add_argument(
                 "-q", "--quiet",
                 help="""Disables notifications.""",
                 action="store_true"
@@ -97,28 +114,30 @@ class PubMedNotifier:
         if args.config:
             self._config_file = args.config
 
+        if args.file:
+            self._queries_file = args.file
+
         self._send_notification = not args.quiet
 
     def _parse_config(self):
-        self._read_config()
+        self._config = self._read_config(self._config_file)
         self._parse_default_config()
-        self._parse_queries()
 
-    def _read_config(self):
-        self._config = configparser.ConfigParser()
-        self._config.read_file(open(self._config_file))
+    def _read_config(self, filepath):
+        parser = configparser.ConfigParser()
+        parser.read_file(open(filepath))
+        return parser
 
     def _parse_default_config(self):
-        self._email = self._get_default_parameters("e-mail")
-        path = self._get_default_parameters("results path")
         self._new_papers_file = os.path.join(
             os.path.expanduser(path),
             str(datetime.datetime.now())+".md"
             )
-        self._default_retstart = self._get_default_parameters("retstart")
-        self._default_retmax = self._get_default_parameters("retmax")
-        self._default_mindate = self._get_default_parameters("mindate")
-        self._default_maxdate = None
+        self._defaults["e-mail"] = self._get_default_parameters("e-mail")
+        self._defaults["retstart"] = self._get_default_parameters("retstart")
+        self._defaults["retmax"] = self._get_default_parameters("retmax")
+        self._defaults["mindate"] = self._get_default_parameters("mindate")
+        self._defaults["maxdate"] = None
 
     def _get_default_parameters(self, parameter):
         """Get the DEFAULT parameter if valid,
@@ -143,45 +162,33 @@ class PubMedNotifier:
         sys.exit(1)
 
     def _parse_queries(self):
-        for item in self._config.sections():
-            if not item == "DEFAULT":
-                title = item
+        self._queries_config = self._read_config(self._queries_file)
+        for item in self._queries_config.sections():
+            self._read_one_query(item)
 
-                try:
-                    term = self._config.get(item, "query")
-                    if not term:
-                        raise QueryInvalidError
-                except configparser.NoOptionError or KeyError or QueryInvalidError as err:
-                    self._error_log("Query {} is not valid.\n".format(title))
-                    continue
+    def _read_one_query(self, title):
+        try:
+            term = self._queries_config.get(title, "query")
+            if not term:
+                raise QueryInvalidError
+        except configparser.NoOptionError or KeyError or QueryInvalidError as err:
+            self._error_log("Query {} is not valid.\n".format(title))
+            return
 
+        self._queries[title] = {
+                "query":term,
+                "retstart":"",
+                "retmax":"",
+                "mindate":"",
+                "maxdate":"",
+                }
+
+        for item in self._queries[title].keys():
+            if item != "query":
                 try:
-                    retstart = self._config.get(item, "retstart")
+                    self._queries[title][item] = self._queries_config.get(title,item)
                 except configparser.NoOptionError:
-                    retstart = self._default_retstart
-
-                try:
-                    retmax = int(self._config.get(item, "retmax"))
-                except configparser.NoOptionError:
-                    retmax = self._default_retmax
-
-                try:
-                    maxdate = int(self._config.get(item, "maxdate"))
-                except configparser.NoOptionError:
-                    maxdate = self._default_maxdate
-
-                try:
-                    mindate = self._config.get(item, "mindate")
-                except configparser.NoOptionError:
-                    mindate = self._default_mindate
-
-                self._queries[title] = {
-                        "query":term,
-                        "retstart":retstart,
-                        "retmax":retmax,
-                        "mindate":mindate,
-                        "maxdate":maxdate,
-                        }
+                    self._queries[title][item] = self._defaults[item]
 
     def _get_pmids_history(self):
         with open(self._history_file,"r") as f :
@@ -196,7 +203,7 @@ class PubMedNotifier:
         self._write_results()
 
     def _fetch_results(self):
-        self._fetcher = metapub.PubMedFetcher(email=self._email, cachedir=self._cache_dir)
+        self._fetcher = metapub.PubMedFetcher(email=self._defaults["e-mail"], cachedir=self._cache_dir)
         for title, values in self._queries.items():
             ids = self._fetcher.pmids_for_query(
                     query=values["query"],
