@@ -67,6 +67,10 @@ class PubMedNotifier:
         self._queries_file = self._data_dir+"/queries"
         self._check_if_file_exists(self._queries_file)
 
+        self._results_dir = self._data_dir+"/results"
+        self._check_if_folder_exists(self._results_dir)
+        self._new_papers_file = self._results_dir+"/results_"+self._execution_date+".md"
+
         self._config_dir = str(XDG_CONFIG_HOME.absolute())+"/pubmednotifier"
         self._check_if_folder_exists(self._config_dir)
         self._config_file = self._config_dir+"/config"
@@ -101,9 +105,15 @@ class PubMedNotifier:
             )
 
         parser.add_argument(
-                "-f", "--file",
+                "-q", "--queries",
                 help="""Specify a path for the queries file. Default is in
                 $XDG_DATA_HOME/pubmednotifier/queries"""
+            )
+
+        parser.add_argument(
+                "-o", "--output",
+                help="""Specify a path for the results file. Default is in
+                $XDG_DATA_HOME/pubmednotifier/results/results_execution-date.md"""
             )
 
         parser.add_argument(
@@ -120,6 +130,9 @@ class PubMedNotifier:
         if args.file:
             self._queries_file = args.file
 
+        if args.output:
+            self._new_papers_file = args.output
+
         self._send_notification = not args.quiet
 
     def _parse_config(self):
@@ -132,10 +145,6 @@ class PubMedNotifier:
         return parser
 
     def _parse_default_config(self):
-        self._new_papers_file = os.path.join(
-            os.path.expanduser(path),
-            str(datetime.datetime.now())+".md"
-            )
         self._defaults["e-mail"] = self._get_default_parameters("e-mail")
         self._defaults["retstart"] = self._get_default_parameters("retstart")
         self._defaults["retmax"] = self._get_default_parameters("retmax")

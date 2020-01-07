@@ -41,13 +41,17 @@ make reset
 
 ## Configuration
 
-At first install, you need to configure the DEFAULT section with at least your
-e-mail address to avoid being blocked without warning in case of problems (the
-NCBI will send you an e-mail beforehand). You can also customize the folder path
-where the results files will be written, and other minor searches defaults.
+The main configuration file is located at `XDG_CONFIG_HOME/pubmednotifier/config`.
+The queries config file is in `XDG_DATA_HOME/pubmednotifier/queries`.
 
-To set-up searches, you need at least a title for the search, and the query. Add
-them to the file as follow :
+At first install, you need to configure the DEFAULT section of the main config
+file with at least your e-mail address to avoid being blocked without warning
+in case of problems (the NCBI will send you an e-mail beforehand). You can
+also customize the folder path where the results files will be written, and
+other minor searches defaults.
+
+To set-up searches in the queries file you need at least a title for the
+search, and the query. Add them to the file as follow :
 
 ```ini
 [Title]
