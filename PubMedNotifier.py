@@ -28,17 +28,11 @@ class PubMedNotifier:
 
         # These checks are done here as the _config_file var
         # can be changed by the script's arguments
-        if os.path.exists(self._config_file):
-            self._parse_config()
-        else:
-            self._error_log("'{}' config file does not exists.".format(self._config_file))
-            sys.exit(1)
+        self._check_if_file_exists(self._config_file, abort=True)
+        self._parse_config()
 
-        if os.path.exists(self._queries_file):
-            self._parse_queries()
-        else:
-            self._error_log("'{}' queries file does not exists.".format(self._queries_file))
-            sys.exit(1)
+        self._check_if_file_exists(self._queries_file, abort=True)
+        self._parse_queries()
 
         self._get_pmids_history()
 
@@ -50,11 +44,14 @@ class PubMedNotifier:
             self._error_log("No defined queries in {}".format(self._config_file))
 
     def _init_vars(self):
+        self._execution_date = str(datetime.datetime.now())
+        self._are_errors = False # if script ran with errors, switch to True
         self._config = None
         self._queries_config = None
         self._defaults = dict()
         self._queries = dict()
         self._results = dict()
+        self._results_txt = str()
         self._counts = dict()
         self._new_papers = dict()
         self._history = list()
@@ -65,8 +62,6 @@ class PubMedNotifier:
 
         self._data_dir = str(XDG_DATA_HOME.absolute())+"/pubmednotifier"
         self._check_if_folder_exists(self._data_dir)
-        self._log_file = self._data_dir+"/log_"+str(datetime.datetime.now())
-        self._check_if_file_exists(self._log_file)
         self._history_file = self._data_dir+"/history"
         self._check_if_file_exists(self._history_file)
         self._queries_file = self._data_dir+"/queries"
@@ -76,13 +71,21 @@ class PubMedNotifier:
         self._check_if_folder_exists(self._config_dir)
         self._config_file = self._config_dir+"/config"
 
+        self._log_dir = self._data_dir+"/logs"
+        self._log_file_name = "log_"+self._execution_date
+        self._check_if_folder_exists(self._log_dir)
+        self._log_file = self._log_dir+"/"+self._log_file_name
+
     def _check_if_folder_exists(self, path):
         if not os.path.exists(path):
             os.mkdir(path)
 
-    def _check_if_file_exists(self, path):
+    def _check_if_file_exists(self, path, abort=False):
         if not os.path.exists(path):
-            open(path, "w").close()
+            if abort:
+                self._error_log("'{}' does not exists.".format(path), abort=True)
+            else:
+                open(path, "w").close()
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(self,
@@ -155,11 +158,9 @@ class PubMedNotifier:
                 else:
                     return value
         except KeyError or EmptyDefaultError as err:
-            self._error_log("DEFAULT {} is not defined.".format(parameter))
+            self._error_log("DEFAULT {} is not defined.".format(parameter), abort=True)
         except EmailSyntaxError as err:
-            self._error_log("{} is not a syntactically valid e-mail.".format(value))
-
-        sys.exit(1)
+            self._error_log("{} is not a syntactically valid e-mail.".format(value), abort=True)
 
     def _parse_queries(self):
         self._queries_config = self._read_config(self._queries_file)
@@ -200,19 +201,25 @@ class PubMedNotifier:
         self._count_new_items()
         self._retrieve_new_pmid_infos()
         self._save_new_pmids_in_history()
+        self._format_results()
         self._write_results()
 
     def _fetch_results(self):
         self._fetcher = metapub.PubMedFetcher(email=self._defaults["e-mail"], cachedir=self._cache_dir)
         for title, values in self._queries.items():
-            ids = self._fetcher.pmids_for_query(
-                    query=values["query"],
-                    since=values["mindate"],
-                    until=values["maxdate"],
-                    retstart=values["retstart"],
-                    retmax=values["retmax"],
-                    )
-            self._results[title] = ids
+            try:
+                ids = self._fetcher.pmids_for_query(
+                        query=values["query"],
+                        since=values["mindate"],
+                        until=values["maxdate"],
+                        retstart=values["retstart"],
+                        retmax=values["retmax"],
+                        )
+                self._results[title] = ids
+            # cacth all exceptions as an error here could be anything
+            # from the NCBI server
+            except:
+                self._error_log("Error fetching query {}".format(title))
 
     def _check_pmids_history(self):
         for title, ids in self._results.items():
@@ -228,7 +235,10 @@ class PubMedNotifier:
         for title, ids in self._results.items():
             self._new_papers[title] = dict()
             for pmid in ids:
-                article = self._fetcher.article_by_pmid(pmid)
+                try:
+                    article = self._fetcher.article_by_pmid(pmid)
+                except metapub.InvalidPMID as err:
+                    self._error_log("Error fetching pmid {}".format(pmid))
                 self._new_papers[title][pmid] = (
                         article.title,
                         article.journal,
@@ -243,16 +253,22 @@ class PubMedNotifier:
                 f.write("\n"+"\n".join(ids))
 
     def _write_results(self):
-        text = str()
+        with open(self._new_papers_file, "w") as f:
+            f.write(self._results_txt)
+
+    def _format_results(self):
+        self._results_txt = str()
+        if self._are_errors:
+            self._results_txt = "The script ran with errors. See logfile '{}'\n\n".format(self._log_file_name)
         for query, ids in self._new_papers.items():
-            text += "# "+query+"\n\n"
+            self._results_txt += "# "+query+"\n\n"
             for pmid, infos in ids.items():
                 title, journal, year, authors, abstract = infos
                 if not abstract or abstract == "None":
                     abstract = "No abstract."
                 else:
                     abstract = "\n".join(textwrap.wrap(abstract, width=80))
-                text += "## {}\n\n{}, *{}*, {}\n\n[PMID: {}]({})\n\n{}\n\n".format(
+                self._results_txt += "## {}\n\n{}, *{}*, {}\n\n[PMID: {}]({})\n\n{}\n\n".format(
                         title,
                         authors,
                         journal,
@@ -261,9 +277,6 @@ class PubMedNotifier:
                         "https://www.ncbi.nlm.nih.gov/pubmed/"+pmid,
                         abstract,
                         )
-        if text:
-            with open(self._new_papers_file, "w") as f:
-                f.write(text)
 
     def _notify(self):
         if os.path.exists(self._new_papers_file):
@@ -281,16 +294,22 @@ class PubMedNotifier:
             notifier.show()
             return
 
-    def _error_log(self, err_msg):
+    def _error_log(self, err_msg, abort=False):
+        self._are_errors = True
         with open(self._log_file, "a") as f:
-            f.write(str(datetime.datetime.now())+": "+err_msg+"\n")
+            f.write(err_msg+"\n")
         print(err_msg)
+        if abort:
+            sys.exit(1)
         self._check_log_size()
 
     def _check_log_size(self):
+        """In case that the log file becomes too big, create a new one with a
+        new timestamp (that should be close to the script execution date)"""
         if os.stat(self._log_file).st_size >= 500:
             self._log_file = self._data_dir+"/log_"+str(datetime.datetime.now())
-            open(self._log_file, "w").close()
+            with open(self._log_file, "w") as f:
+                f.write(self._execution_date+": log file too big, creating a new one"+"\n")
 
 if __name__ == "__main__":
     PubMedNotifier()
