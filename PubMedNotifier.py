@@ -231,10 +231,13 @@ class PubMedNotifier:
                 self._error_log("Error fetching query {}".format(title))
 
     def _check_pmids_history(self):
-        for title, ids in self._results.items():
+        temp_dict = dict(self._results)
+        for title, ids in temp_dict.items():
             new_items = [i for i in ids if not i in self._history]
             if new_items:
                 self._results[title] = new_items
+            else:
+                del self._results[title]
 
     def _count_new_items(self):
         for title in self._results.keys():
