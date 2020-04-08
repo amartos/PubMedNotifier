@@ -166,7 +166,7 @@ class PubMedNotifier:
                     retmax = self._default_retmax
 
                 try:
-                    maxdate = int(self._config.get(item, "maxdate"))
+                    maxdate = self._config.get(item, "maxdate")
                 except configparser.NoOptionError:
                     maxdate = self._default_maxdate
 
